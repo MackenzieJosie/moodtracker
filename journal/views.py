@@ -20,22 +20,24 @@ def signup(request):
 
 @login_required
 def dashboard(request):
+    chart = None
     entries = MoodEntry.objects.filter(user=request.user).order_by('-date')[:7]
     moods = [e.mood for e in entries][::-1]
     dates = [e.date.strftime("%b %d") for e in entries][::-1]
+    
+    if entries:
+        plt.figure(figsize=(5, 3))
+        plt.plot(dates, moods, marker='o')
+        plt.title("Mood Over Time")
+        plt.ylim(0, 10)
+        plt.tight_layout()
 
-    plt.figure(figsize=(5, 3))
-    plt.plot(dates, moods, marker='o')
-    plt.title("Mood Over Time")
-    plt.ylim(0, 10)
-    plt.tight_layout()
-
-    buffer = io.BytesIO()
-    plt.savefig(buffer, format='png')
-    buffer.seek(0)
-    chart = base64.b64encode(buffer.read()).decode('utf-8')
-    buffer.close()
-    plt.close()
+        buffer = io.BytesIO()
+        plt.savefig(buffer, format='png')
+        buffer.seek(0)
+        chart = base64.b64encode(buffer.read()).decode('utf-8')
+        buffer.close()
+        plt.close()
 
     return render(request, 'journal/dashboard.html', {'entries': entries, 'chart': chart})
 
